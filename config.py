@@ -3,6 +3,7 @@ import inspect
 from os import getenv
 from pathlib import Path
 from beanie import Document 
+from dotenv import load_dotenv; load_dotenv()
 
 
 def get_beanie_models():

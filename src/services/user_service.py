@@ -4,7 +4,9 @@ from src.models.user import User
 from src.schemas.user_schema import UserRegistration, UserLogin, UserUpdate
 import jwt
 import bcrypt
+from beanie import PydanticObjectId
 from datetime import datetime, timezone, timedelta
+
 
 
 class UserAuthService:
@@ -13,12 +15,11 @@ class UserAuthService:
         salt                = bcrypt.gensalt(salts)
         password            = original_password.encode()
         encoded_password    = bcrypt.hashpw(password, salt)
-        return str(encoded_password)
+        return encoded_password.decode()
 
     @staticmethod
     def compare_password(original_password:str, encoded_password:str) -> bool:
         return bcrypt.checkpw(original_password.encode(), encoded_password.encode())
-    
     
     @staticmethod
     def create_access_token(data:dict):
@@ -49,7 +50,12 @@ class UserService:
             email     = user.email,
             password  = user.password
             )
-        await new_user.insert()
+        return await new_user.insert()
+        
+        
+    @classmethod
+    async def find_all(cls):
+        return await User.find_all().to_list()
         
     @classmethod
     async def login(cls, user:UserLogin):
@@ -59,17 +65,24 @@ class UserService:
         
 
     @classmethod
-    def update(cls, id:str, user:UserUpdate):
-        pass
+    async def update(cls, id:PydanticObjectId, user:UserUpdate):
+        user_found = await User.find_one(User.id == id)
+        if user_found:
+            for attr, value in user.model_fields.items():
+                setattr(user_found, attr, value)
+                
+            user_found.replace()
+            return user_found
 
     @classmethod
-    def delete(cls, id:str):
-        pass 
+    async def delete(cls, id:PydanticObjectId):
+        user = await cls.get_by_id(id)
+        user.delete()
 
     @classmethod
-    def get_all(cls):
-        pass 
-
-    @classmethod
-    def get_by_id(cls):
-        pass 
+    async def get_by_id(cls, id:PydanticObjectId):
+        if user := await User.find_one(User.id == id):
+            return user
+        raise UserException("Usuário não encontrado")
+    
+    
