@@ -1,7 +1,7 @@
 from config import JWT_SECRET
 from src.exceptions.user_exception import UserException
 from src.models.user import User
-from src.schemas.user_schema import UserRegistration, UserLogin, UserUpdate
+from src.schemas.user_schema import UserRegistration, UserLogin, UserResponse, UserUpdate
 import jwt
 import bcrypt
 from beanie import PydanticObjectId
@@ -39,7 +39,7 @@ class UserAuthService:
 
 class UserService:
     @classmethod 
-    async def create(cls, user:UserRegistration):
+    async def create(cls, user:UserRegistration) -> User:
         user.password = UserAuthService.encode_password(user.password)
         
         if await User.find_one(User.email == user.email):
@@ -50,7 +50,8 @@ class UserService:
             email     = user.email,
             password  = user.password
             )
-        return await new_user.insert()
+        added_user = await new_user.insert()
+        return UserResponse(**added_user.model_dump())
         
         
     @classmethod
@@ -60,7 +61,7 @@ class UserService:
     @classmethod
     async def login(cls, user:UserLogin):
         if (found_user := await User.find_one(User.email == user.email)) and UserAuthService.compare_password(user.password, found_user.password):
-            return UserAuthService.create_access_token({"id": found_user.id})
+            return UserAuthService.create_access_token({"id": str(found_user.id)})
         raise UserException("Verifique o e-mail ou a senha e tente novamente mais tarde")
         
 

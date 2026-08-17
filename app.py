@@ -25,10 +25,12 @@ app = FastAPI(
 
 @app.exception_handler(BaseException)
 def common_handler(request:Request, exc:BaseException):
-    return JSONResponse(content = str(exc), status_code = exc.status_code)
+    return JSONResponse(content = 
+                        {"message":str(exc)},
+                          status_code = exc.status_code)
 
 
 app.include_router(user_router)
 
 if __name__ == "__main__":
-    uvicorn.run(app)
+    uvicorn.run("app:app", port=8000, reload=True)

@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr
+from beanie import PydanticObjectId
 
 class UserRegistration(BaseModel):
     name: str
@@ -14,3 +15,7 @@ class UserUpdate(UserRegistration):
     name:str
     email:str
 
+class UserResponse(BaseModel):
+    name:str
+    email:EmailStr
+    id:PydanticObjectId

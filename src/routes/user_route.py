@@ -1,8 +1,9 @@
 from beanie import PydanticObjectId
-from fastapi import APIRouter
+from fastapi import APIRouter, WebSocket
 from fastapi.responses import JSONResponse
 from src.services.user_service import UserService
 from src.schemas.user_schema import UserRegistration, UserLogin, UserUpdate
+from src.util.api_response import ApiResponse
 
 user_router = APIRouter(prefix = "/user")
 
@@ -12,18 +13,24 @@ async def get_all_users():
 
 @user_router.post("/register", description="creates user")
 async def create_user(user: UserRegistration):
-    return JSONResponse(content = {
-        "message":""
-        })
-    return await UserService.create(user)
+    new_user = await UserService.create(user)
+    return {"message":"Usuario criado com sucesso!", "user": new_user}
+
 
 @user_router.post("/login", description="autentica usuario")
 async def login(user:UserLogin):
-    return 
+    token = await UserService.login(user)
+    return JSONResponse({
+        "message": "Logado com sucesso!",
+        "token":token
+    })
 
 @user_router.delete("/{id}")
 async def delete_user(id:PydanticObjectId):
-    return await UserService.delete(id)
+    deleted_user = await UserService.delete(id)
+    return JSONResponse({
+        "message": f"Usuario {deleted_user} apagado"
+    })
 
 @user_router.put("/{id}")
 def update_user(id:PydanticObjectId, data:UserUpdate):
@@ -32,3 +39,7 @@ def update_user(id:PydanticObjectId, data:UserUpdate):
 @user_router.get("/{id}")
 async def get_by_id(id:PydanticObjectId):
     return await UserService.get_by_id(id)
+
+@user_router.websocket("/oi")
+async def socket(websocket:WebSocket):
+    pass
