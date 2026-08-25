@@ -23,9 +23,8 @@ class UserAuthService:
     
     @staticmethod
     def create_access_token(data:dict):
-        pl = data.copy()
         expiration_date = datetime.now(timezone.utc) + timedelta(hours=12)
-        pl.update({"exp":expiration_date})
+        pl = {"exp":expiration_date, **data}
         return jwt.encode(pl, JWT_SECRET, algorithm="HS256")
     
     @staticmethod
@@ -82,7 +81,7 @@ class UserService:
 
     @classmethod
     async def get_by_id(cls, id:PydanticObjectId):
-        if user := await User.find_one(User.id == id):
+        if user := await User.get(id):
             return user
         raise UserException("Usuário não encontrado")
     

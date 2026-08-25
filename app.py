@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from src.database.db import DatabaseManager
 import uvicorn
 from src.routes.user_route import user_router
+from src.routes.room_route import room_router
 from src.exceptions.base_exception import BaseException
 
 from config import BEANIE_MODELS
@@ -31,6 +32,6 @@ def common_handler(request:Request, exc:BaseException):
 
 
 app.include_router(user_router)
-
+app.include_router(room_router)
 if __name__ == "__main__":
     uvicorn.run("app:app", port=8000, reload=True)

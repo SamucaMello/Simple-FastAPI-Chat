@@ -3,7 +3,6 @@ from fastapi import APIRouter, WebSocket
 from fastapi.responses import JSONResponse
 from src.services.user_service import UserService
 from src.schemas.user_schema import UserRegistration, UserLogin, UserUpdate
-from src.util.api_response import ApiResponse
 
 user_router = APIRouter(prefix = "/user")
 
@@ -40,6 +39,4 @@ def update_user(id:PydanticObjectId, data:UserUpdate):
 async def get_by_id(id:PydanticObjectId):
     return await UserService.get_by_id(id)
 
-@user_router.websocket("/oi")
-async def socket(websocket:WebSocket):
-    pass
+ 
