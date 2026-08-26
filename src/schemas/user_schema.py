@@ -1,6 +1,11 @@
 from pydantic import BaseModel, EmailStr
 from beanie import PydanticObjectId
 
+
+class UserOut(BaseModel):
+    name: str 
+    #da p colocar o campo do email tb 
+
 class UserRegistration(BaseModel):
     name: str
     email: EmailStr

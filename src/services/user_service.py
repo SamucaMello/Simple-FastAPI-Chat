@@ -1,45 +1,22 @@
 from config import JWT_SECRET
+from src.schemas.pagination_schema import PaginationParams
+from src.exceptions.auth_exception import AuthException
 from src.exceptions.user_exception import UserException
 from src.models.user import User
-from src.schemas.user_schema import UserRegistration, UserLogin, UserResponse, UserUpdate
+from src.schemas.user_schema import UserOut, UserRegistration, UserLogin, UserResponse, UserUpdate
 import jwt
 import bcrypt
 from beanie import PydanticObjectId
 from datetime import datetime, timezone, timedelta
+from src.services.auth_service import AuthException
 
 
 
-class UserAuthService:
-    @staticmethod
-    def encode_password(original_password:str, salts:int = 12) -> str:
-        salt                = bcrypt.gensalt(salts)
-        password            = original_password.encode()
-        encoded_password    = bcrypt.hashpw(password, salt)
-        return encoded_password.decode()
-
-    @staticmethod
-    def compare_password(original_password:str, encoded_password:str) -> bool:
-        return bcrypt.checkpw(original_password.encode(), encoded_password.encode())
-    
-    @staticmethod
-    def create_access_token(data:dict):
-        expiration_date = datetime.now(timezone.utc) + timedelta(hours=12)
-        pl = {"exp":expiration_date, **data}
-        return jwt.encode(pl, JWT_SECRET, algorithm="HS256")
-    
-    @staticmethod
-    def decode_access_token(token:str):
-        return jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-    
-    @staticmethod
-    def is_strong_password(password:str):
-        return True
-        
 
 class UserService:
     @classmethod 
     async def create(cls, user:UserRegistration) -> User:
-        user.password = UserAuthService.encode_password(user.password)
+        user.password = AuthService.encode_password(user.password)
         
         if await User.find_one(User.email == user.email):
             raise UserException("Esse e-mail já está cadastrado")
@@ -54,13 +31,14 @@ class UserService:
         
         
     @classmethod
-    async def find_all(cls):
-        return await User.find_all().to_list()
+    async def find_all(cls, pagination:PaginationParams):
+        skip = (pagination.page - 1) * pagination.size
+        return await User.find_all(projection_model=UserOut, skip = skip, limit = pagination.size ).to_list()
         
     @classmethod
     async def login(cls, user:UserLogin):
-        if (found_user := await User.find_one(User.email == user.email)) and UserAuthService.compare_password(user.password, found_user.password):
-            return UserAuthService.create_access_token({"id": str(found_user.id)})
+        if (found_user := await User.find_one(User.email == user.email)) and AuthService.compare_password(user.password, found_user.password):
+            return AuthService.create_access_token({"id": str(found_user.id)})
         raise UserException("Verifique o e-mail ou a senha e tente novamente mais tarde")
         
 

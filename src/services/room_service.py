@@ -8,8 +8,7 @@ from src.exceptions.room_exception import RoomException
 from src.schemas.room_schema import RoomCreate
 from src.models.user import User
 from src.models.room import Room
-
-
+import re
 
 
 class ClientMessagePayload(BaseModel):
@@ -17,6 +16,20 @@ class ClientMessagePayload(BaseModel):
 
 class CompleteMessagePayload(ClientMessagePayload):
     author:str = "N/A"
+
+class CommandPayload:
+    command:str
+    target:RoomClient
+
+
+class RoomAdminCommands:
+    @staticmethod
+    async def kick(victim:RoomClient, reason:str):
+        await victim.disconnect(reason)
+
+    @staticmethod
+    async def ban(victim:RoomClient, reason:str, minutes:int):
+        pass 
 
 ROOMS = {}
 class RoomClient:
@@ -48,14 +61,14 @@ class RoomClient:
     def get_all_clients(self) -> list[RoomClient]:
         return ROOMS.get(self.room_id)
 
-    async def broadcast(self, message:str):
+    async def broadcast(self, message:CompleteMessagePayload):
         for socket in self.get_all_clients():
-           await socket.send_message(message)
+           await socket.send_message(message.model_dump_json())
 
     async def receive_message(self) -> CompleteMessagePayload:
         data    = await self.socket.receive_text()
-        message = CompleteMessagePayload.model_validate_json(data)
-        return data
+        message = ClientMessagePayload.model_validate_json(data)
+        return CompleteMessagePayload(**message.model_dump(), author = self.id)
 
     async def disconnect(self, reason:str = "N/A"):
         await self.socket.close(reason=reason)
@@ -66,19 +79,9 @@ class RoomClient:
     async def send_message(self, message:str):
         return await self.socket.send_text(message)
 
-class RoomAdmin(RoomClient):
-    def __init__(self, user, room, websocket):
-        super().__init__(user, room, websocket)
-
-    def kick(self, id:str):
-        for client in self.get_all_clients():
-            if client.id == id:
-                client.disconnect()
-
          
 
 class RoomService:
-
     @classmethod
     async def user_in_room(cls, user:User) -> Room:
         return await Room.find_one(Room.participants == user)
@@ -101,6 +104,10 @@ class RoomService:
         room.participants = new_participants
         await room.save()
         
+    @classmethod
+    async def get_by_name(cls, name:str) -> list[Room]:
+        search_pttr = re.compile(name, re.IGNORECASE)
+        return await Room.find(Room.name == search_pttr)
 
     @classmethod 
     async def get_by_id(cls, id:PydanticObjectId) -> Room:
@@ -110,7 +117,7 @@ class RoomService:
 
     @classmethod
     async def user_owns_room(cls, user:User, room_id:PydanticObjectId) -> bool:
-        return cls.get_by_id(room_id).owner.id == user.id
+        return (await cls.get_by_id(room_id)).owner == user
 
     @classmethod
     async def create_room(cls, user:User, room_data:RoomCreate) -> Room:
@@ -121,9 +128,12 @@ class RoomService:
 
     
     @classmethod
-    def delete_room(cls, user:User, room_id:PydanticObjectId):
-        if cls.user_owns_room(user, room_id):
-            pass 
+    async def delete_room(cls, user:User, id:PydanticObjectId):
+        room = await cls.get_by_id(id)
+        if await cls.user_owns_room(user, id):
+            await room.delete()
+            return room
+        raise RoomException("Você não tem permissão para excluir essa sala")
 
     
 

@@ -28,13 +28,15 @@ def get_beanie_models():
     return models
         
 
-
-
-
-
-
-MONGO_URI       = getenv("MONGO_URI")
-JWT_SECRET      = getenv("JWT_SECRET")
+# -- BEANIE
 BEANIE_MODELS   = get_beanie_models()
 
 
+
+# -- JWT
+JWT_SECRET      = getenv("JWT_SECRET")
+JWT_EXPIRES_IN  = 12 # -> Horas
+
+
+# -- MongoDB
+MONGO_URI       = getenv("MONGO_URI")

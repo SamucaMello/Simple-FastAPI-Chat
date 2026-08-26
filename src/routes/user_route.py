@@ -1,14 +1,15 @@
 from beanie import PydanticObjectId
-from fastapi import APIRouter, WebSocket
+from fastapi import APIRouter, Depends, WebSocket
 from fastapi.responses import JSONResponse
+from src.schemas.pagination_schema import PaginationParams
 from src.services.user_service import UserService
-from src.schemas.user_schema import UserRegistration, UserLogin, UserUpdate
+from src.schemas.user_schema import UserOut, UserRegistration, UserLogin, UserUpdate
 
 user_router = APIRouter(prefix = "/user")
 
-@user_router.get("/")
-async def get_all_users():
-    return await UserService.find_all()
+@user_router.get("/", response_model=list[UserOut])
+async def get_all_users(pagination:PaginationParams = Depends()):
+    return await UserService.find_all(pagination)
 
 @user_router.post("/register", description="creates user")
 async def create_user(user: UserRegistration):
