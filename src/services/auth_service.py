@@ -1,12 +1,14 @@
+from config import JWT_EXPIRES_IN
 from datetime import datetime, timedelta, timezone
 from typing import TypedDict, Union
-
 import bcrypt
 from beanie import PydanticObjectId
 import jwt
 from pydantic import EmailStr
-
+from fastapi import Request
 from config import JWT_SECRET
+from models.user import User
+from src.services.user_service import UserService
 from src.exceptions.auth_exception import AuthException
 
 
@@ -15,7 +17,7 @@ class AccessTokenData(TypedDict):
     email:EmailStr
 
 
-JWT_EXPIRES_IN = 12   #horas
+
 class AuthService:
     @staticmethod
     def encode_password(original_password:str, salts:int = 12) -> str:
@@ -35,7 +37,7 @@ class AuthService:
         return jwt.encode(pl, JWT_SECRET, algorithm="HS256")
     
     @staticmethod
-    def decode_access_token(token:str) -> dict:
+    def decode_access_token(token:str) -> Union[dict, AccessTokenData]:
         try:
             return jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         except jwt.exceptions.ExpiredSignatureError:
@@ -46,3 +48,7 @@ class AuthService:
         return True
 
 
+    @classmethod
+    async def get_user_on_header(cls, request:Request) -> User:
+        decoded_token = cls.decode_access_token( request.headers.get("authorization", "") )
+        return await UserService.get_by_id( decoded_token["id"] ) 
