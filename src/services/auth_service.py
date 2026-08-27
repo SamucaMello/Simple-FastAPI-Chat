@@ -5,10 +5,10 @@ import bcrypt
 from beanie import PydanticObjectId
 import jwt
 from pydantic import EmailStr
-from fastapi import Request
+
 from config import JWT_SECRET
-from models.user import User
-from src.services.user_service import UserService
+
+
 from src.exceptions.auth_exception import AuthException
 
 
@@ -44,11 +44,24 @@ class AuthService:
             raise AuthException("Token Expirado.")
     
     @staticmethod
-    def is_strong_password(password:str):
-        return True
+    def is_strong_password(password: str) -> bool:
+        checker = {
+            "has_good_length": len(password) >= 8,
+            "has_uppercase": False,
+            "has_lowercase": False,
+            "has_number": False
+        }
+    
+        for char in password:
+            if char.islower():
+                checker["has_lowercase"] = True
+            elif char.isupper():
+                checker["has_uppercase"] = True
+            elif char.isdigit():
+                checker["has_number"] = True
+
+        return all(checker.values())
 
 
-    @classmethod
-    async def get_user_on_header(cls, request:Request) -> User:
-        decoded_token = cls.decode_access_token( request.headers.get("authorization", "") )
-        return await UserService.get_by_id( decoded_token["id"] ) 
+
+    

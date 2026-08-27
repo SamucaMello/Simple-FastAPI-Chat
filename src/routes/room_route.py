@@ -3,13 +3,13 @@ from fastapi.websockets import WebSocket
 from fastapi.requests import Request
 
 from src.services.room_service import RoomClient
-from src.services.user_service import UserService, UserAuthService
+from src.services.user_service import UserService
 room_router = APIRouter(prefix="/room")
 
 
 @room_router.websocket("/")
 async def room(websocket:WebSocket, token:str = "", room:str = ""):
-    data        = UserAuthService.decode_access_token(token)
+    data        = UserService.decode_access_token(token)
     user        = await UserService.get_by_id(data.get("id"))
 
     client = RoomClient(user, room, websocket)

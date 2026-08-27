@@ -1,6 +1,11 @@
+
+
+from fastapi import Request
+
 from config import JWT_SECRET
-from src.schemas.pagination_schema import PaginationParams
 from src.exceptions.auth_exception import AuthException
+from src.schemas.pagination_schema import PaginationParams
+
 from src.exceptions.user_exception import UserException
 from src.models.user import User
 from src.schemas.user_schema import UserOut, UserRegistration, UserLogin, UserResponse, UserUpdate
@@ -8,7 +13,7 @@ import jwt
 import bcrypt
 from beanie import PydanticObjectId
 from datetime import datetime, timezone, timedelta
-from src.services.auth_service import AuthException
+from src.services.auth_service import AuthService
 
 
 
@@ -16,17 +21,16 @@ from src.services.auth_service import AuthException
 class UserService:
     @classmethod 
     async def create(cls, user:UserRegistration) -> User:
+        if not AuthService.is_strong_password(user.password):
+            raise AuthException("Senha muito fraca")
         user.password = AuthService.encode_password(user.password)
+        
         
         if await User.find_one(User.email == user.email):
             raise UserException("Esse e-mail já está cadastrado")
         
-        new_user = User(
-            name      = user.name,
-            email     = user.email,
-            password  = user.password
-            )
-        added_user = await new_user.insert()
+        new_user    = User( **user.model_dump() )
+        added_user  = await new_user.insert()
         return UserResponse(**added_user.model_dump())
         
         
@@ -62,5 +66,10 @@ class UserService:
         if user := await User.get(id):
             return user
         raise UserException("Usuário não encontrado")
+
+    @classmethod
+    async def get_user_on_header(cls, request:Request) -> User:
+        decoded_token = cls.decode_access_token( request.headers.get("authorization", "") )
+        return await UserService.get_by_id( decoded_token["id"] ) 
     
     
