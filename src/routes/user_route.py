@@ -26,7 +26,7 @@ async def login(user:UserLogin):
     })
 
 @user_router.delete("/{id}")
-async def delete_user(id:PydanticObjectId):
+async def delete_user(id:PydanticObjectId, user = Depends(UserService.get_user_on_header)):
     deleted_user = await UserService.delete(id)
     return JSONResponse({
         "message": f"Usuario {deleted_user} apagado"

@@ -17,7 +17,7 @@ class ClientMessagePayload(BaseModel):
 class CompleteMessagePayload(ClientMessagePayload):
     author:str = "N/A"
 
-class CommandPayload:
+'''class CommandPayload:
     command:str
     target:RoomClient
 
@@ -30,7 +30,7 @@ class RoomAdminCommands:
     @staticmethod
     async def ban(victim:RoomClient, reason:str, minutes:int):
         pass 
-
+'''
 ROOMS = {}
 class RoomClient:
     id:str
@@ -58,7 +58,7 @@ class RoomClient:
             self.room_id : [*self.get_all_clients(), self]
         })
 
-    def get_all_clients(self) -> list[RoomClient]:
+    def get_all_clients(self) -> list:
         return ROOMS.get(self.room_id)
 
     async def broadcast(self, message:CompleteMessagePayload):

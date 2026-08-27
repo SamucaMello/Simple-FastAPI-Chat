@@ -40,3 +40,7 @@ JWT_EXPIRES_IN  = 12 # -> Horas
 
 # -- MongoDB
 MONGO_URI       = getenv("MONGO_URI")
+
+
+# -- API
+PORT = int(getenv("PORT")) or 8000
