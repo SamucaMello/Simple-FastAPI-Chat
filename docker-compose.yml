@@ -30,3 +30,4 @@ volumes:
 
 networks:
   api_network:
+    driver: bridge
