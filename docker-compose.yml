@@ -1,33 +1,38 @@
+
+volumes:
+  mongodb_data:
+
+networks:
+  api_network:
+    driver: bridge
+
 services:
   api:
     container_name: api_container
     build:
       context: .
       dockerfile: Dockerfile
+    
     env_file:
       - .env
     restart: always
     ports:
-      - "3000:8000"
+      - "8080:8080"
     depends_on:
       - mongodb
     networks:
       - api_network
 
   mongodb:
-    image: mongo:8.0
+    image: mongo:latest
     container_name: mongodb_container
+    environment: []
     ports:
       - "27017:27017"
     volumes:
-      - mongo_data:/data/db
+      - mongodb_data:/data/db
     networks:
       - api_network
-    restart: unless-stopped
+    restart: always
 
-volumes:
-  mongo_data:
-
-networks:
-  api_network:
-    driver: bridge
+  

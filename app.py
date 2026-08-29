@@ -12,6 +12,7 @@ from config import BEANIE_MODELS, PORT
 @asynccontextmanager
 async def lifespan(app:FastAPI):
     DatabaseManager.init_client()
+    print("obtendo models do banco")
     await init_beanie(DatabaseManager.get_database(), document_models = BEANIE_MODELS)
     yield 
     await DatabaseManager.close_client()
